@@ -1,5 +1,5 @@
 import asyncio
-import aiofiles
+import asyncfiles
 import inspect
 import logging
 import math
@@ -96,7 +96,7 @@ async def download_file(
     Similar behaviour as S3Transfer's download_file() method,
     except that parameters are capitalised.
     """
-    async with aiofiles.open(Filename, 'wb') as fileobj:  # type: _AsyncBinaryIO
+    async with asyncfiles.open(Filename, 'wb') as fileobj:  # type: _AsyncBinaryIO
         await download_fileobj(
             self,
             Bucket,
@@ -120,11 +120,13 @@ async def _download_part(self, bucket: str, key: str, extraArgs: Dict[str, str],
         if io_queue:
             await io_queue.put((start, content))
         else:
-            # Check if it's aiofiles file
-            if inspect.iscoroutinefunction(file.seek) and inspect.iscoroutinefunction(file.write):
+            # Check if it's an async file (asyncfiles / aiofiles)
+            if inspect.iscoroutinefunction(file.write):
                 # These operations need to happen sequentially, which is non-deterministic when dealing with event loops
                 async with write_lock:
-                    await file.seek(start)
+                    seek_res = file.seek(start)
+                    if inspect.isawaitable(seek_res):
+                        await seek_res
                     await file.write(content)
             else:
                 # Fallback to synchronous operations for file objects that are not async
@@ -591,7 +593,7 @@ async def upload_file(
     Similar behavior as S3Transfer's upload_file() method,
     except that parameters are capitalized.
     """
-    async with aiofiles.open(Filename, 'rb') as open_file:
+    async with asyncfiles.open(Filename, 'rb') as open_file:
         await upload_fileobj(
             self,
             open_file,

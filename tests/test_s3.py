@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 
 from botocore.exceptions import ClientError
 from boto3.s3.transfer import S3TransferConfig
-import aiofiles
+import asyncfiles as aiofiles
 import pytest
 
 
